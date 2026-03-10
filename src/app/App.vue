@@ -1,7 +1,10 @@
-<script setup lang="ts"></script>
+<script setup lang="ts">
+import { AppFooter } from '@/widgets/appFooter'
+</script>
 
 <template>
-  <h1 class="bg-red-700">fbla bla bla</h1>
+  <section class="bg-[#FFF2E0]">
+    <main>adadsasdasd</main>
+    <AppFooter />
+  </section>
 </template>
-
-<style scoped></style>
