@@ -142,12 +142,12 @@ const sendMessage = async () => {
         <button
           type="button"
           @click="triggerFileInput"
-          class="flex items-center justify-center w-12 h-12 rounded-xl border-2 border-dashed border-gray-300 hover:border-blue-500 hover:bg-blue-50 transition-all cursor-pointer group"
+          class="flex items-center justify-center w-12 h-12 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#FF9A2F] hover:bg-[#FFE8D1] transition-all cursor-pointer group"
           title="Загрузить фото продуктов"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="w-6 h-6 text-gray-400 group-hover:text-blue-500"
+            class="w-6 h-6 text-gray-400 group-hover:text-[#FF9A2F]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
