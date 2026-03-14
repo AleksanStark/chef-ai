@@ -1,0 +1,19 @@
+:root {
+  /* Brand palette */
+  --primary:       #FF7A00;
+  --primary-hover: #E96F00;
+  --primary-soft:  #FFE8D1;
+  --accent:        #FF9A2F;
+  --accent-light:  #FFC078;
+  --dark:          #2B2B2B;
+  --dark-muted:    #6B5B4E;
+  --light-bg:      #FFF8F1;
+  --white:         #FFFFFF;
+
+  /* Derived tokens */
+  --border:        rgba(255, 122, 0, 0.15);
+  --border-soft:   rgba(255, 122, 0, 0.08);
+  --shadow-sm:     0 2px 12px rgba(255, 122, 0, 0.08);
+  --shadow-md:     0 8px 32px rgba(255, 122, 0, 0.12);
+  --shadow-lg:     0 20px 60px rgba(255, 122, 0, 0.16);
+}

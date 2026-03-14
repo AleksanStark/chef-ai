@@ -1,0 +1,1 @@
+export { default as TheNavbar } from './ui/TheNavbar.vue'
