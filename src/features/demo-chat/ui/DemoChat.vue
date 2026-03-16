@@ -29,8 +29,7 @@
     <!-- Messages -->
     <div
       ref="messagesRef"
-      class="px-5 py-5 flex flex-col gap-3 overflow-y-auto"
-      style="height: 173px; scroll-behavior: smooth"
+      class="px-5 py-5 flex flex-col gap-3 overflow-y-auto scroll-smooth h-[173px]"
     >
       <div
         v-for="(msg, i) in visibleMessages"
