@@ -7,8 +7,7 @@
           From fridge to table<br />in three steps
         </h2>
         <p class="section-sub" style="margin: 14px auto 0; text-align: center">
-          No shopping needed. No waste. Just real food from what you already
-          have.
+          No shopping needed. No waste. Just real food from what you already have.
         </p>
       </div>
 
@@ -31,34 +30,25 @@
 </template>
 
 <script setup lang="ts">
-import { SectionLabel } from "@/shared/ui";
+import { SectionLabel } from '@/shared/ui'
 
 const STEPS = [
   {
-    icon: "📦",
-    title: "List your ingredients",
+    icon: '📦',
+    title: 'List your ingredients',
     desc: "Type or photograph what's in your fridge. Our AI instantly recognizes and categorizes every product — from half an onion to leftover chicken.",
   },
   {
-    icon: "🎯",
-    title: "Set your goals",
+    icon: '🎯',
+    title: 'Set your goals',
     desc: "Losing weight? Building muscle? Tell us your goals and dietary restrictions and we'll optimize every single meal for your body.",
   },
   {
-    icon: "🍽️",
-    title: "Get your recipes",
+    icon: '🍽️',
+    title: 'Get your recipes',
     desc: "Receive a personalized meal plan with step-by-step recipes, nutritional breakdown, and smart shopping suggestions for what's missing.",
   },
-];
-
-const FRIDGE_ITEMS = [
-  "🥚 Eggs",
-  "🍅 Tomatoes",
-  "🧅 Onion",
-  "🧀 Feta",
-  "🫒 Olive oil",
-  "🌶️ Peppers",
-];
+]
 </script>
 
 <style scoped>
@@ -83,16 +73,21 @@ const FRIDGE_ITEMS = [
   gap: 2px;
   background: var(--border);
   border-radius: 20px;
-  overflow: hidden;
 }
 .step-card {
   background: var(--light-bg);
   padding: 44px 36px;
   position: relative;
-  transition: background 0.25s;
+  transition:
+    transform 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
 }
 .step-card:hover {
   background: var(--primary-soft);
+  transform: translateY(-6px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+  z-index: 2;
 }
 .step-card:first-child {
   border-radius: 20px 0 0 20px;
@@ -102,7 +97,7 @@ const FRIDGE_ITEMS = [
 }
 
 .step-num {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 900;
   font-size: 72px;
   color: rgba(255, 122, 0, 0.1);
@@ -124,7 +119,7 @@ const FRIDGE_ITEMS = [
   box-shadow: var(--shadow-sm);
 }
 .step-title {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 700;
   font-size: 20px;
   margin-bottom: 10px;
@@ -139,18 +134,32 @@ const FRIDGE_ITEMS = [
   position: absolute;
   right: -16px;
   top: 50%;
-  transform: translateY(-50%);
-  z-index: 1;
+  transform: translateY(-50%) scale(0.9);
+  opacity: 0;
+
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
+
+  z-index: 10;
+
   width: 32px;
   height: 32px;
   background: var(--primary);
   color: white;
   border-radius: 50%;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   font-size: 14px;
   box-shadow: 0 4px 12px rgba(255, 122, 0, 0.3);
+}
+
+.step-card:hover .step-arrow {
+  opacity: 1;
+  transform: translateY(-50%) translateX(6px) scale(1);
 }
 
 .demo-strip {
@@ -204,7 +213,7 @@ const FRIDGE_ITEMS = [
   font-size: 28px;
 }
 .output-title {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 700;
   font-size: 15px;
   color: var(--dark);
