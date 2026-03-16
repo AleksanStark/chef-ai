@@ -3,12 +3,10 @@
     <div class="team-inner">
       <div class="team-header reveal">
         <SectionLabel>The team</SectionLabel>
-        <h2 class="text-[24px]">
-          Built by two full-stack devs<br />who love good food
-        </h2>
+        <h2 class="text-[24px]">Built by two full-stack devs<br />who love good food</h2>
         <p class="section-sub">
-          We're a two-person team looking for clients and investors who believe
-          in zero food waste and personalized nutrition.
+          We're a two-person team looking for clients and investors who believe in zero food waste
+          and personalized nutrition.
         </p>
       </div>
 
@@ -27,9 +25,7 @@
             <div class="member-role">{{ member.role }}</div>
             <p class="member-bio">{{ member.bio }}</p>
             <div class="member-tags">
-              <span v-for="t in member.tags" :key="t" class="skill-tag">{{
-                t
-              }}</span>
+              <span v-for="t in member.tags" :key="t" class="skill-tag">{{ t }}</span>
             </div>
           </div>
         </div>
@@ -40,8 +36,8 @@
         <div class="investor-text">
           <h4>Interested in investing or partnering?</h4>
           <p>
-            We're open to clients, investors, and early adopters. Let's build
-            something great together.
+            We're open to clients, investors, and early adopters. Let's build something great
+            together.
           </p>
         </div>
         <BaseButton variant="primary" href="mailto:hello@fridgeai.com">
@@ -62,26 +58,26 @@
 </template>
 
 <script setup lang="ts">
-import { SectionLabel, BaseButton } from "@/shared/ui";
+import { SectionLabel, BaseButton } from '@/shared/ui'
 
 const TEAM = [
   {
-    emoji: "👨‍💻",
-    name: "Your Name",
-    role: "Full-stack Developer",
-    bio: "Backend architecture, AI integration, and system design. Built the Qwen pipeline and API layer from scratch.",
-    tags: ["Vue 3", "Node.js", "Qwen AI", "PostgreSQL"],
-    bg: "linear-gradient(135deg, #FFE8D1, #FFC078)",
+    emoji: '👨‍💻',
+    name: 'Ibrahim Chekmazov',
+    role: 'Full-stack Developer',
+    bio: 'Backend architecture, AI integration, and system design. Built the Qwen pipeline and API layer from scratch.',
+    tags: ['Vue 3', 'Node.js', 'Qwen AI', 'PostgreSQL'],
+    bg: 'linear-gradient(135deg, #FFE8D1, #FFC078)',
   },
   {
-    emoji: "👨‍💻",
-    name: "Friend's Name",
-    role: "Full-stack Developer",
-    bio: "Frontend engineering, UX design, and product vision. Turns complex AI outputs into beautiful user experiences.",
-    tags: ["TypeScript", "TailwindCSS", "REST APIs", "UI/UX"],
-    bg: "linear-gradient(135deg, #FFE8D1, #FF9A2F44)",
+    emoji: '👨‍💻',
+    name: 'Aleksan Vartapetyan',
+    role: 'Full-stack Developer',
+    bio: 'Frontend engineering, UX design, and product vision. Turns complex AI outputs into beautiful user experiences.',
+    tags: ['TypeScript', 'TailwindCSS', 'REST APIs', 'UI/UX'],
+    bg: 'linear-gradient(135deg, #FFE8D1, #FF9A2F44)',
   },
-];
+]
 </script>
 
 <style scoped>
@@ -131,7 +127,7 @@ const TEAM = [
   border: 1.5px solid rgba(255, 122, 0, 0.15);
 }
 .member-name {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 700;
   font-size: 19px;
   color: var(--dark);
@@ -183,7 +179,7 @@ const TEAM = [
   min-width: 200px;
 }
 .investor-text h4 {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 700;
   font-size: 17px;
   color: var(--dark);
