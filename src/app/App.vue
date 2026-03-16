@@ -1,11 +1,10 @@
-<script setup lang="ts">
-import { AppFooter } from '@/widgets/appFooter'
-import AppChat from '@/widgets/appFooter/ui/AppChat.vue'
-</script>
-
 <template>
-  <section class="bg-[#FFF2E0]">
-    <AppChat />
-    <AppFooter />
-  </section>
+  <TheNavbar />
+  <RouterView />
+  <TheFooter />
 </template>
+
+<script setup lang="ts">
+import { TheNavbar } from '@/widgets/navbar'
+import { TheFooter } from '@/widgets/footer'
+</script>

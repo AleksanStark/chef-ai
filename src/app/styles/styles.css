@@ -1,0 +1,73 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+@theme {
+  /* Brand palette */
+  --color-primary: #ff7a00;
+  --color-primary-hover: #e96f00;
+  --color-primary-soft: #ffe8d1;
+  --color-accent: #ff9a2f;
+  --color-accent-light: #ffc078;
+  --color-dark: #2b2b2b;
+  --color-dark-muted: #6b5b4e;
+  --color-light-bg: #fff8f1;
+  --color-white: #ffffff;
+
+  /* Derived tokens */
+  --border: rgba(255, 122, 0, 0.15);
+  --border-soft: rgba(255, 122, 0, 0.08);
+  --shadow-sm: 0 2px 12px rgba(255, 122, 0, 0.08);
+  --shadow-md: 0 8px 32px rgba(255, 122, 0, 0.12);
+  --shadow-lg: 0 20px 60px rgba(255, 122, 0, 0.16);
+}
+
+@layer components {
+  .cta-bg-1 {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(255, 122, 0, 0.15) 0%,
+      transparent 70%
+    );
+    top: -150px;
+    left: -100px;
+    pointer-events: none;
+  }
+
+  .cta-bg-2 {
+    position: absolute;
+    width: 400px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(
+      circle,
+      rgba(255, 154, 47, 0.1) 0%,
+      transparent 70%
+    );
+    bottom: -100px;
+    right: -80px;
+    pointer-events: none;
+  }
+
+  .badge-pulse {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent-light);
+    animation: pulse 2s infinite;
+  }
+
+  .cta-title {
+    font-family: "Fraunces", serif;
+    font-weight: 900;
+    font-size: clamp(40px, 5.5vw, 68px);
+    letter-spacing: -0.035em;
+    line-height: 1;
+    color: white;
+    position: relative;
+    z-index: 1;
+    margin-bottom: 16px;
+  }
+}
