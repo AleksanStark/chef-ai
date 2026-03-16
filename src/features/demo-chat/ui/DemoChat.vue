@@ -132,104 +132,155 @@
 
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
-import { fetchCompletion, imageToBase64 } from '@/features/ai'
+import { imageToBase64 } from '@/features/ai'
 import { marked } from 'marked'
+import OpenAI from 'openai'
 
 interface Message {
   role: 'user' | 'ai'
   html: string
 }
 
+// ── OpenAI client (OpenRouter) ──────────────────────────────────────────────
+const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: import.meta.env.VITE_OPEN_ROUTER_API_KEY,
+  dangerouslyAllowBrowser: true,
+})
+
+const SYSTEM_PROMPT = `Ты профессиональный диетолог и шеф-повар.
+Твоя задача: помогать пользователю строить сбалансированный рацион и желаемую им диету из доступных продуктов.
+
+СТРОГИЕ ПРАВИЛА:
+1. Отвечай кратко, по делу, без лишних вступлений.
+2. Делай расчет КБЖУ и расписание питания по дням.
+3. Отвечай СТРОГО на русском языке. Никакого китайского или английского.
+4. Если запрос не касается еды, рецептов или диеты — вежливо откажи в обслуживании.`
+
+// ── Reactive state ──────────────────────────────────────────────────────────
 const visibleMessages = ref<Message[]>([])
 const typing = ref(false)
-const inputVal = ref('')
 
+// isStreaming: true когда первый токен уже пришёл.
+// Используется чтобы скрыть typing-dots в момент начала стриминга —
+// иначе dots и текст показываются одновременно.
+const isStreaming = ref(false)
+
+const inputVal = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
 const selectedImage = ref<string | null>(null)
+const messagesRef = ref<HTMLElement | null>(null)
 
-const triggerFileInput = () => {
+// ── Utilities ───────────────────────────────────────────────────────────────
+function renderMarkdown(text: string): string {
+  // marked.parse синхронен при отключённом async режиме
+  return marked.parse(text) as string
+}
+
+async function scrollToBottom() {
+  await nextTick()
+  messagesRef.value?.scrollTo({
+    top: messagesRef.value.scrollHeight,
+    behavior: 'smooth',
+  })
+}
+
+// ── File handling ────────────────────────────────────────────────────────────
+function triggerFileInput() {
   fileInput.value?.click()
 }
 
-const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  const file = target.files?.[0]
-
-  if (file) {
-    // Создаем превью для проверки (опционально)
-    selectedImage.value = URL.createObjectURL(file)
-    console.log('Выбран файл:', file.name)
-  }
+function handleFileChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (file) selectedImage.value = URL.createObjectURL(file)
 }
 
-// ref на DOM-контейнер сообщений — нужен для программного скролла
-const messagesRef = ref<HTMLElement | null>(null)
-const renderMarkdown = (text: string) => {
-  return marked.parse(text)
+function clearImage() {
+  selectedImage.value = null
+  if (fileInput.value) fileInput.value.value = ''
 }
 
-/**
- * Плавно прокручивает список сообщений до самого низа.
- * Вызывается через nextTick — чтобы DOM уже успел обновиться
- * и scrollHeight отражал высоту с новым сообщением.
- */
-async function scrollToBottom() {
-  await nextTick()
-  if (messagesRef.value) {
-    messagesRef.value.scrollTo({
-      top: messagesRef.value.scrollHeight,
-      behavior: 'smooth',
-    })
-  }
-}
-
+// ── Send message ─────────────────────────────────────────────────────────────
 async function sendMessage() {
   const text = inputVal.value.trim()
   const file = fileInput.value?.files?.[0]
-  // Блокируем повторную отправку пока AI отвечает
+
   if ((!text && !file) || typing.value) return
 
-  // ── Шаг 1: очищаем поле немедленно ──────────────────────────
+  // 1. Мгновенно очищаем поле ввода
   inputVal.value = ''
 
-  // ── Шаг 2: показываем сообщение пользователя СРАЗУ ──────────
-  // Раньше оно добавлялось после ответа AI — поэтому "исчезало".
-  // Теперь push происходит ДО вызова fetchCompletion.
-  visibleMessages.value.push({ role: 'user', html: text || 'Анализ картинки' })
-
-  // ── Шаг 3: скроллим к сообщению пользователя ────────────────
+  // 2. Показываем сообщение пользователя немедленно, ДО запроса к API
+  visibleMessages.value.push({
+    role: 'user',
+    html: text || (file ? `📸 ${file.name}` : ''),
+  })
   await scrollToBottom()
 
-  // ── Шаг 4: включаем typing-индикатор ────────────────────────
+  // 3. Typing-dots (три точки) — видны до прихода первого токена
   typing.value = true
-
-  // ── Шаг 5: скроллим к typing-индикатору ─────────────────────
+  isStreaming.value = false
   await scrollToBottom()
+
+  // 4. Резервируем пустой пузырь для AI — будем заполнять его токенами по мере прихода
+  const aiIndex = visibleMessages.value.length
+  visibleMessages.value.push({ role: 'ai', html: '' })
 
   try {
-    let base64Data: string | undefined = undefined
-    if (file) {
-      base64Data = await imageToBase64(file)
-    }
-    const completion = await fetchCompletion(text, base64Data)
+    // 5. Строим messages array
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: 'system', content: SYSTEM_PROMPT },
+    ]
 
-    // ── Шаг 6: убираем typing, добавляем ответ AI ───────────────
-    typing.value = false
-    visibleMessages.value.push({
-      role: 'ai',
-      html: completion ?? '⚠️ No response from AI.',
+    if (file) {
+      const base64 = await imageToBase64(file)
+      messages.push({
+        role: 'user',
+        content: [{ type: 'image_url', image_url: { url: base64 } }],
+      })
+    }
+
+    if (text) {
+      messages.push({ role: 'user', content: text })
+    }
+
+    // 6. stream: true — SDK вернёт AsyncIterable<ChatCompletionChunk>
+    const stream = await openai.chat.completions.create({
+      model: 'qwen/qwen3-14b',
+      messages,
+      stream: true,
     })
 
-    // ── Шаг 7: скроллим к ответу AI ─────────────────────────────
-    await scrollToBottom()
+    let accumulated = ''
+
+    // 7. for-await итерируем по чанкам
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content ?? ''
+      if (!delta) continue
+
+      // Первый токен пришёл — убираем typing-dots
+      if (!isStreaming.value) {
+        isStreaming.value = true
+      }
+
+      // Накапливаем текст и обновляем пузырь реактивно
+      // Vue перерисует только изменившуюся часть DOM
+      accumulated += delta
+      visibleMessages.value[aiIndex]!.html = accumulated
+
+      // Скроллим при каждом чанке — текст всегда виден внизу
+      await scrollToBottom()
+    }
+
+    clearImage()
   } catch (e) {
     console.error(e)
-    typing.value = false
-    visibleMessages.value.push({
-      role: 'ai',
-      html: '⚠️ <strong>Something went wrong.</strong> Please try again.',
-    })
+    visibleMessages.value[aiIndex]!.html = '⚠️ **Что-то пошло не так.** Попробуй ещё раз.'
     await scrollToBottom()
+  } finally {
+    // Всегда сбрасываем флаги по окончании — даже при ошибке
+    typing.value = false
+    isStreaming.value = false
   }
 }
 </script>
@@ -483,6 +534,46 @@ div::-webkit-scrollbar-thumb:hover {
 .slide-up-enter-from {
   opacity: 0;
   transform: translateY(12px);
+}
+
+/* Переопределяем стили markdown-контента внутри пузыря AI.
+   :deep() нужен потому что v-html создаёт контент вне scoped-области. */
+:deep(.prose p) {
+  margin: 0 0 6px;
+}
+:deep(.prose p:last-child) {
+  margin-bottom: 0;
+}
+:deep(.prose ul),
+:deep(.prose ol) {
+  padding-left: 16px;
+  margin: 4px 0;
+}
+:deep(.prose li) {
+  margin: 2px 0;
+}
+:deep(.prose strong) {
+  font-weight: 600;
+  color: #2b2b2b;
+}
+:deep(.prose code) {
+  background: rgba(255, 122, 0, 0.08);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+:deep(.prose pre) {
+  background: rgba(255, 122, 0, 0.06);
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+:deep(.prose h1),
+:deep(.prose h2),
+:deep(.prose h3) {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  margin: 8px 0 4px;
 }
 
 @keyframes pulse {
