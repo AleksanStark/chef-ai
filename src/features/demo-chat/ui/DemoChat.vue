@@ -26,7 +26,7 @@
       </span>
     </div>
 
-    <!-- Messages container — ref для автоскролла -->
+    <!-- Messages -->
     <div
       ref="messagesRef"
       class="px-5 py-5 flex flex-col gap-3 overflow-y-auto"
@@ -38,26 +38,38 @@
         class="flex"
         :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
       >
+        <!-- ── Сообщение пользователя ── -->
+        <div v-if="msg.role === 'user'" class="max-w-[78%] flex flex-col gap-1.5 items-end">
+          <!-- Картинка — показывается если есть image -->
+          <img
+            v-if="msg.image"
+            :src="msg.image"
+            class="rounded-[10px] max-w-[180px] max-h-[140px] object-cover border border-[rgba(255,122,0,0.2)]"
+            alt="uploaded"
+          />
+          <!-- Текст — показывается если есть text -->
+          <div
+            v-if="msg.text"
+            class="px-4 py-[11px] rounded-[14px] rounded-br-[4px] text-[13.5px] leading-[1.55] bg-primary text-white"
+          >
+            {{ msg.text }}
+          </div>
+        </div>
+
+        <!-- ── Ответ AI — markdown через v-html ── -->
         <!--
-          Явный закрывающий тег </div> обязателен при использовании v-html.
-          Self-closing <div /> с v-html поглощает следующие узлы как дочерние.
+          Явный закрывающий тег </div> обязателен с v-html:
+          self-closing <div /> поглощает следующие узлы как дочерние.
         -->
         <div
-          v-if="msg.role === 'user'"
-          class="max-w-[78%] px-4 py-[11px] rounded-[14px] text-[13.5px] leading-[1.55] bg-primary text-white rounded-br-[4px]"
-          :class="[msg.role === 'user' ? '' : '']"
-        >
-          {{ msg.html }}
-        </div>
-        <div
-          v-if="msg.role === 'ai'"
-          class="max-w-[78%] px-4 py-[11px] rounded-[14px] text-[13.5px] leading-[1.55] rounded-br-[4px] bg-light-bg text-dark border border-[rgba(255,122,0,0.08)] rounded-bl-[4px]"
-          :class="msg.html === '' && 'opacity-0'"
-          v-html="renderMarkdown(msg.html)"
+          v-else
+          class="max-w-[78%] px-4 py-[11px] rounded-[14px] rounded-bl-[4px] text-[13.5px] leading-[1.55] bg-light-bg text-dark border border-[rgba(255,122,0,0.08)] prose prose-sm"
+          :class="{ 'opacity-0': msg.text === '' }"
+          v-html="renderMarkdown(msg.text)"
         ></div>
       </div>
 
-      <!-- Typing indicator — показывается пока AI думает -->
+      <!-- Typing dots — только пока первый токен не пришёл -->
       <div v-if="typing" class="msg-row ai">
         <div class="msg-bubble typing">
           <span class="dot" /><span class="dot" /><span class="dot" />
@@ -69,7 +81,7 @@
     <div
       class="px-4 py-3 border-t border-[rgba(255,122,0,0.08)] flex items-center gap-2 bg-light-bg"
     >
-      <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2 shrink-0">
         <input
           ref="fileInput"
           type="file"
@@ -80,13 +92,13 @@
 
         <button
           type="button"
-          @click="triggerFileInput"
-          class="flex items-center justify-center w-12 h-12 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#FF9A2F] hover:bg-[#FFE8D1] transition-all cursor-pointer group"
+          class="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#FF9A2F] hover:bg-[#FFE8D1] transition-all cursor-pointer group"
           title="Загрузить фото продуктов"
+          @click="triggerFileInput"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            class="w-6 h-6 text-gray-400 group-hover:text-[#E96F00]"
+            class="w-5 h-5 text-gray-400 group-hover:text-[#E96F00]"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -100,16 +112,21 @@
           </svg>
         </button>
 
-        <div v-if="selectedImage" class="relative w-12 h-12">
-          <img :src="selectedImage" class="w-full h-full object-cover rounded-lg border" />
+        <!-- Превью выбранной картинки над инпутом -->
+        <div v-if="selectedImage" class="relative w-10 h-10 shrink-0">
+          <img
+            :src="selectedImage"
+            class="w-full h-full object-cover rounded-lg border border-[rgba(255,122,0,0.2)]"
+          />
           <button
-            @click="selectedImage = null"
-            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center"
+            class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center leading-none"
+            @click="clearImage"
           >
             ✕
           </button>
         </div>
       </div>
+
       <input
         v-model="inputVal"
         type="text"
@@ -117,14 +134,27 @@
         class="flex-1 bg-white border border-[rgba(255,122,0,0.15)] rounded-[10px] px-3.5 py-2.5 text-[13px] text-dark font-body outline-none transition-colors duration-200 focus:border-primary placeholder:text-dark-muted placeholder:opacity-60"
         @keydown.enter="sendMessage"
       />
+
       <button
         class="w-10 h-10 shrink-0 bg-primary rounded-[10px] text-white flex items-center justify-center transition-all duration-200 hover:bg-primary-hover hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         :disabled="typing"
         aria-label="Send"
         @click="sendMessage"
       >
-        <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <svg v-if="!typing" width="18" height="18" viewBox="0 0 18 18" fill="none">
           <path d="M2 9l14-7-5 7 5 7-14-7z" fill="currentColor" />
+        </svg>
+        <svg v-else class="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle
+            cx="8"
+            cy="8"
+            r="6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-dasharray="28"
+            stroke-dashoffset="10"
+            stroke-linecap="round"
+          />
         </svg>
       </button>
     </div>
@@ -137,12 +167,18 @@ import { imageToBase64 } from '@/features/ai'
 import { marked } from 'marked'
 import OpenAI from 'openai'
 
+// ── Интерфейс сообщения ──────────────────────────────────────────────────────
+// Раньше был один html: string — это мешало отображать картинку и текст отдельно.
+// Теперь два независимых поля:
+//   text  — текстовое содержимое (у AI — markdown, у user — plain text)
+//   image — data URL для превью картинки (только у user-сообщений)
 interface Message {
   role: 'user' | 'ai'
-  html: string
+  text: string
+  image?: string // data URL, только для user-сообщений с картинкой
 }
 
-// ── OpenAI client (OpenRouter) ──────────────────────────────────────────────
+// ── OpenAI client ────────────────────────────────────────────────────────────
 const openai = new OpenAI({
   baseURL: 'https://openrouter.ai/api/v1',
   apiKey: import.meta.env.VITE_OPEN_ROUTER_API_KEY,
@@ -158,23 +194,17 @@ const SYSTEM_PROMPT = `Ты профессиональный диетолог и
 3. Отвечай СТРОГО на русском языке. Никакого китайского или английского.
 4. Если запрос не касается еды, рецептов или диеты — вежливо откажи в обслуживании.`
 
-// ── Reactive state ──────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────────────────
 const visibleMessages = ref<Message[]>([])
 const typing = ref(false)
-
-// isStreaming: true когда первый токен уже пришёл.
-// Используется чтобы скрыть typing-dots в момент начала стриминга —
-// иначе dots и текст показываются одновременно.
 const isStreaming = ref(false)
-
 const inputVal = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
-const selectedImage = ref<string | null>(null)
+const selectedImage = ref<string | null>(null) // data URL для превью в инпуте
 const messagesRef = ref<HTMLElement | null>(null)
 
-// ── Utilities ───────────────────────────────────────────────────────────────
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function renderMarkdown(text: string): string {
-  // marked.parse синхронен при отключённом async режиме
   return marked.parse(text) as string
 }
 
@@ -186,54 +216,63 @@ async function scrollToBottom() {
   })
 }
 
-// ── File handling ────────────────────────────────────────────────────────────
+// ── File handling ─────────────────────────────────────────────────────────────
 function triggerFileInput() {
   fileInput.value?.click()
 }
 
 function handleFileChange(event: Event) {
   const file = (event.target as HTMLInputElement).files?.[0]
-  if (file) selectedImage.value = URL.createObjectURL(file)
+  if (!file) return
+  // Создаём blob URL только для превью в инпуте.
+  // Для отправки в API позже вызовем imageToBase64(file) отдельно.
+  selectedImage.value = URL.createObjectURL(file)
 }
 
 function clearImage() {
+  // Освобождаем blob URL чтобы избежать утечки памяти
+  if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
   selectedImage.value = null
   if (fileInput.value) fileInput.value.value = ''
 }
 
-// ── Send message ─────────────────────────────────────────────────────────────
+// ── Send message ──────────────────────────────────────────────────────────────
 async function sendMessage() {
   const text = inputVal.value.trim()
   const file = fileInput.value?.files?.[0]
 
   if ((!text && !file) || typing.value) return
 
-  // 1. Мгновенно очищаем поле ввода
   inputVal.value = ''
 
-  // 2. Показываем сообщение пользователя немедленно, ДО запроса к API
+  // ── Шаг 1: формируем сообщение пользователя ─────────────────────────────
+  // image: selectedImage.value — это blob URL только для отображения в чате.
+  // Для API нужен base64, конвертируем его отдельно ниже.
   visibleMessages.value.push({
     role: 'user',
-    html: text || (file ? `📸 ${file.name}` : ''),
+    text,
+    // Сохраняем текущий blob URL в сообщение ДО вызова clearImage()
+    image: selectedImage.value ?? undefined,
   })
   await scrollToBottom()
 
-  // 3. Typing-dots (три точки) — видны до прихода первого токена
+  // ── Шаг 2: typing + резервный пузырь AI ──────────────────────────────────
   typing.value = true
   isStreaming.value = false
   await scrollToBottom()
 
-  // 4. Резервируем пустой пузырь для AI — будем заполнять его токенами по мере прихода
   const aiIndex = visibleMessages.value.length
-  visibleMessages.value.push({ role: 'ai', html: '' })
+  visibleMessages.value.push({ role: 'ai', text: '' })
 
   try {
-    // 5. Строим messages array
+    // ── Шаг 3: строим messages для API ───────────────────────────────────────
     const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_PROMPT },
     ]
 
     if (file) {
+      // imageToBase64 возвращает data URL (data:image/...;base64,...)
+      // OpenRouter принимает его напрямую в image_url
       const base64 = await imageToBase64(file)
       messages.push({
         role: 'user',
@@ -245,41 +284,33 @@ async function sendMessage() {
       messages.push({ role: 'user', content: text })
     }
 
-    // 6. stream: true — SDK вернёт AsyncIterable<ChatCompletionChunk>
+    // ── Шаг 4: стриминг ──────────────────────────────────────────────────────
     const stream = await openai.chat.completions.create({
-      model: 'qwen/qwen3-14b',
+      model: 'qwen/qwen3.5-9b',
       messages,
       stream: true,
     })
 
     let accumulated = ''
 
-    // 7. for-await итерируем по чанкам
     for await (const chunk of stream) {
       const delta = chunk.choices[0]?.delta?.content ?? ''
       if (!delta) continue
 
-      // Первый токен пришёл — убираем typing-dots
-      if (!isStreaming.value) {
-        isStreaming.value = true
-      }
+      if (!isStreaming.value) isStreaming.value = true
 
-      // Накапливаем текст и обновляем пузырь реактивно
-      // Vue перерисует только изменившуюся часть DOM
       accumulated += delta
-      visibleMessages.value[aiIndex]!.html = accumulated
-
-      // Скроллим при каждом чанке — текст всегда виден внизу
+      visibleMessages.value[aiIndex]!.text = accumulated
       await scrollToBottom()
     }
 
+    // Очищаем картинку только после успешной отправки
     clearImage()
   } catch (e) {
     console.error(e)
-    visibleMessages.value[aiIndex]!.html = '⚠️ **Что-то пошло не так.** Попробуй ещё раз.'
+    visibleMessages.value[aiIndex]!.text = '⚠️ **Что-то пошло не так.** Попробуй ещё раз.'
     await scrollToBottom()
   } finally {
-    // Всегда сбрасываем флаги по окончании — даже при ошибке
     typing.value = false
     isStreaming.value = false
   }
