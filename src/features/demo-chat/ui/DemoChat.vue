@@ -45,13 +45,14 @@
         <div
           v-if="msg.role === 'user'"
           class="max-w-[78%] px-4 py-[11px] rounded-[14px] text-[13.5px] leading-[1.55] bg-primary text-white rounded-br-[4px]"
-          :class="msg.role === 'user' ? '' : ''"
+          :class="[msg.role === 'user' ? '' : '']"
         >
           {{ msg.html }}
         </div>
         <div
-          v-else
+          v-if="msg.role === 'ai'"
           class="max-w-[78%] px-4 py-[11px] rounded-[14px] text-[13.5px] leading-[1.55] rounded-br-[4px] bg-light-bg text-dark border border-[rgba(255,122,0,0.08)] rounded-bl-[4px]"
+          :class="msg.html === '' && 'opacity-0'"
           v-html="renderMarkdown(msg.html)"
         ></div>
       </div>
