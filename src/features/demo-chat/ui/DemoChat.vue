@@ -13,13 +13,9 @@
         🤖
       </div>
       <div class="flex-1">
-        <span class="block font-display font-bold text-[14px] text-dark"
-          >FridgeAI Assistant</span
-        >
+        <span class="block font-display font-bold text-[14px] text-dark">ChefAI Assistant</span>
         <span class="flex items-center gap-1.5 text-[11px] text-primary">
-          <span
-            class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-brand"
-          />
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-brand" />
           Online · Qwen AI
         </span>
       </div>
@@ -104,10 +100,7 @@
         </button>
 
         <div v-if="selectedImage" class="relative w-12 h-12">
-          <img
-            :src="selectedImage"
-            class="w-full h-full object-cover rounded-lg border"
-          />
+          <img :src="selectedImage" class="w-full h-full object-cover rounded-lg border" />
           <button
             @click="selectedImage = null"
             class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center"
@@ -138,42 +131,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from "vue";
-import { fetchCompletion, imageToBase64 } from "@/features/ai";
-import { marked } from "marked";
+import { ref, nextTick } from 'vue'
+import { fetchCompletion, imageToBase64 } from '@/features/ai'
+import { marked } from 'marked'
 
 interface Message {
-  role: "user" | "ai";
-  html: string;
+  role: 'user' | 'ai'
+  html: string
 }
 
-const visibleMessages = ref<Message[]>([]);
-const typing = ref(false);
-const inputVal = ref("");
+const visibleMessages = ref<Message[]>([])
+const typing = ref(false)
+const inputVal = ref('')
 
-const fileInput = ref<HTMLInputElement | null>(null);
-const selectedImage = ref<string | null>(null);
+const fileInput = ref<HTMLInputElement | null>(null)
+const selectedImage = ref<string | null>(null)
 
 const triggerFileInput = () => {
-  fileInput.value?.click();
-};
+  fileInput.value?.click()
+}
 
 const handleFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
 
   if (file) {
     // Создаем превью для проверки (опционально)
-    selectedImage.value = URL.createObjectURL(file);
-    console.log("Выбран файл:", file.name);
+    selectedImage.value = URL.createObjectURL(file)
+    console.log('Выбран файл:', file.name)
   }
-};
+}
 
 // ref на DOM-контейнер сообщений — нужен для программного скролла
-const messagesRef = ref<HTMLElement | null>(null);
+const messagesRef = ref<HTMLElement | null>(null)
 const renderMarkdown = (text: string) => {
-  return marked.parse(text);
-};
+  return marked.parse(text)
+}
 
 /**
  * Плавно прокручивает список сообщений до самого низа.
@@ -181,62 +174,62 @@ const renderMarkdown = (text: string) => {
  * и scrollHeight отражал высоту с новым сообщением.
  */
 async function scrollToBottom() {
-  await nextTick();
+  await nextTick()
   if (messagesRef.value) {
     messagesRef.value.scrollTo({
       top: messagesRef.value.scrollHeight,
-      behavior: "smooth",
-    });
+      behavior: 'smooth',
+    })
   }
 }
 
 async function sendMessage() {
-  const text = inputVal.value.trim();
-  const file = fileInput.value?.files?.[0];
+  const text = inputVal.value.trim()
+  const file = fileInput.value?.files?.[0]
   // Блокируем повторную отправку пока AI отвечает
-  if ((!text && !file) || typing.value) return;
+  if ((!text && !file) || typing.value) return
 
   // ── Шаг 1: очищаем поле немедленно ──────────────────────────
-  inputVal.value = "";
+  inputVal.value = ''
 
   // ── Шаг 2: показываем сообщение пользователя СРАЗУ ──────────
   // Раньше оно добавлялось после ответа AI — поэтому "исчезало".
   // Теперь push происходит ДО вызова fetchCompletion.
-  visibleMessages.value.push({ role: "user", html: text || "Анализ картинки" });
+  visibleMessages.value.push({ role: 'user', html: text || 'Анализ картинки' })
 
   // ── Шаг 3: скроллим к сообщению пользователя ────────────────
-  await scrollToBottom();
+  await scrollToBottom()
 
   // ── Шаг 4: включаем typing-индикатор ────────────────────────
-  typing.value = true;
+  typing.value = true
 
   // ── Шаг 5: скроллим к typing-индикатору ─────────────────────
-  await scrollToBottom();
+  await scrollToBottom()
 
   try {
-    let base64Data: string | undefined = undefined;
+    let base64Data: string | undefined = undefined
     if (file) {
-      base64Data = await imageToBase64(file);
+      base64Data = await imageToBase64(file)
     }
-    const completion = await fetchCompletion(text, base64Data);
+    const completion = await fetchCompletion(text, base64Data)
 
     // ── Шаг 6: убираем typing, добавляем ответ AI ───────────────
-    typing.value = false;
+    typing.value = false
     visibleMessages.value.push({
-      role: "ai",
-      html: completion ?? "⚠️ No response from AI.",
-    });
+      role: 'ai',
+      html: completion ?? '⚠️ No response from AI.',
+    })
 
     // ── Шаг 7: скроллим к ответу AI ─────────────────────────────
-    await scrollToBottom();
+    await scrollToBottom()
   } catch (e) {
-    console.error(e);
-    typing.value = false;
+    console.error(e)
+    typing.value = false
     visibleMessages.value.push({
-      role: "ai",
-      html: "⚠️ <strong>Something went wrong.</strong> Please try again.",
-    });
-    await scrollToBottom();
+      role: 'ai',
+      html: '⚠️ <strong>Something went wrong.</strong> Please try again.',
+    })
+    await scrollToBottom()
   }
 }
 </script>
@@ -290,7 +283,7 @@ div::-webkit-scrollbar-thumb:hover {
 }
 .chat-name {
   display: block;
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 700;
   font-size: 14px;
   color: var(--dark);
@@ -396,7 +389,7 @@ div::-webkit-scrollbar-thumb:hover {
   font-size: 28px;
 }
 .result-title {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 700;
   font-size: 15px;
   color: var(--dark);
@@ -451,7 +444,7 @@ div::-webkit-scrollbar-thumb:hover {
   padding: 10px 14px;
   font-size: 13px;
   color: var(--dark);
-  font-family: "DM Sans", sans-serif;
+  font-family: 'DM Sans', sans-serif;
   outline: none;
   transition: border-color 0.2s;
 }
