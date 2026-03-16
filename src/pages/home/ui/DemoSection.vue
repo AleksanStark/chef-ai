@@ -1,12 +1,12 @@
 <template>
-  <section class="demo-section">
+  <section id="demo" class="demo-section">
     <div class="demo-inner">
       <div class="demo-text reveal">
         <SectionLabel>Live demo</SectionLabel>
         <h2 class="text-[24px]">See the magic happen</h2>
         <p class="section-sub">
-          Just tell the AI what you've got. It understands natural language — no
-          forms, no dropdowns, no friction.
+          Just tell the AI what you've got. It understands natural language — no forms, no
+          dropdowns, no friction.
         </p>
 
         <ul class="demo-points">
@@ -30,14 +30,14 @@
 </template>
 
 <script setup lang="ts">
-import { SectionLabel } from "@/shared/ui";
-import { DemoChat } from "@/features/demo-chat";
+import { SectionLabel } from '@/shared/ui'
+import { DemoChat } from '@/features/demo-chat'
 
 const POINTS = [
-  { icon: "🗣️", text: "Natural language — just type like texting a friend" },
-  { icon: "⚡", text: "Instant recipe suggestions in under 2 seconds" },
-  { icon: "🎯", text: "Adapts to your dietary goals and restrictions" },
-];
+  { icon: '🗣️', text: 'Natural language — just type like texting a friend' },
+  { icon: '⚡', text: 'Instant recipe suggestions in under 2 seconds' },
+  { icon: '🎯', text: 'Adapts to your dietary goals and restrictions' },
+]
 </script>
 
 <style scoped>
