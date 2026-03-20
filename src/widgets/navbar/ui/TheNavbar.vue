@@ -1,3 +1,19 @@
+<script setup lang="ts">
+import { ref } from 'vue'
+import { useNavScroll } from '@/shared/lib/useNavScroll'
+// import { BaseButton } from '@/shared/ui'
+
+const { scrolled } = useNavScroll()
+const mobileOpen = ref(false)
+
+const NAV_LINKS = [
+  { href: '#how', label: 'How it works' },
+  { href: '#features', label: 'Features' },
+  { href: '#team', label: 'Team' },
+  { href: '#demo', label: 'Demo' },
+]
+</script>
+
 <template>
   <nav :class="{ scrolled }">
     <div class="nav-inner">
@@ -13,7 +29,7 @@
       </ul>
 
       <div class="nav-actions">
-        <BaseButton variant="primary" size="sm" href="#">Get started free</BaseButton>
+        <!-- <BaseButton variant="primary" size="sm" href="#">Get started free</BaseButton> -->
       </div>
 
       <button
@@ -30,26 +46,10 @@
       <a v-for="link in NAV_LINKS" :key="link.href" :href="link.href" @click="mobileOpen = false">
         {{ link.label }}
       </a>
-      <BaseButton variant="primary" href="#" style="margin-top: 8px">Get started free</BaseButton>
+      <!-- <BaseButton variant="primary" href="#" style="margin-top: 8px">Get started free</BaseButton> -->
     </div>
   </nav>
 </template>
-
-<script setup lang="ts">
-import { ref } from 'vue'
-import { useNavScroll } from '@/shared/lib/useNavScroll'
-import { BaseButton } from '@/shared/ui'
-
-const { scrolled } = useNavScroll()
-const mobileOpen = ref(false)
-
-const NAV_LINKS = [
-  { href: '#how', label: 'How it works' },
-  { href: '#features', label: 'Features' },
-  { href: '#team', label: 'Team' },
-  { href: '#demo', label: 'Demo' },
-]
-</script>
 
 <style scoped>
 nav {

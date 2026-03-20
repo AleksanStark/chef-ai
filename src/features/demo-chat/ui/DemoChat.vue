@@ -1,165 +1,3 @@
-<template>
-  <div
-    class="bg-white border border-[rgba(255,122,0,0.15)] rounded-[22px] overflow-hidden shadow-brand-lg"
-  >
-    <!-- Header -->
-    <div
-      class="px-5 py-4 border-b border-[rgba(255,122,0,0.08)] flex items-center gap-2.5 bg-light-bg"
-    >
-      <div
-        class="w-[38px] h-[38px] rounded-[10px] flex items-center justify-center text-xl border border-[rgba(255,122,0,0.2)]"
-        style="background: linear-gradient(135deg, #ffe8d1, #ffc078)"
-      >
-        🤖
-      </div>
-      <div class="flex-1">
-        <span class="block font-display font-bold text-[14px] text-dark">ChefAI Assistant</span>
-        <span class="flex items-center gap-1.5 text-[11px] text-primary">
-          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-brand" />
-          Online · Qwen AI
-        </span>
-      </div>
-      <span
-        class="bg-primary-soft text-primary text-[10px] font-bold tracking-[0.1em] px-2 py-0.5 rounded-md border border-[rgba(255,122,0,0.2)]"
-      >
-        AI
-      </span>
-    </div>
-
-    <!-- Messages -->
-    <div
-      ref="messagesRef"
-      class="px-5 py-5 flex flex-col gap-3 overflow-y-auto scroll-smooth h-[173px]"
-    >
-      <div
-        v-for="(msg, i) in visibleMessages"
-        :key="i"
-        class="flex"
-        :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
-      >
-        <!-- ── Сообщение пользователя ── -->
-        <div v-if="msg.role === 'user'" class="max-w-[78%] flex flex-col gap-1.5 items-end">
-          <!-- Картинка — показывается если есть image -->
-          <img
-            v-if="msg.image"
-            :src="msg.image"
-            class="rounded-[10px] max-w-[180px] max-h-[140px] object-cover border border-[rgba(255,122,0,0.2)]"
-            alt="uploaded"
-          />
-          <!-- Текст — показывается если есть text -->
-          <div
-            v-if="msg.text"
-            class="px-4 py-[11px] rounded-[14px] rounded-br-[4px] text-[13.5px] leading-[1.55] bg-primary text-white"
-          >
-            {{ msg.text }}
-          </div>
-        </div>
-
-        <!-- ── Ответ AI — markdown через v-html ── -->
-        <!--
-          Явный закрывающий тег </div> обязателен с v-html:
-          self-closing <div /> поглощает следующие узлы как дочерние.
-        -->
-        <div
-          v-else
-          class="max-w-[78%] px-4 py-[11px] rounded-[14px] rounded-bl-[4px] text-[13.5px] leading-[1.55] bg-light-bg text-dark border border-[rgba(255,122,0,0.08)] prose prose-sm"
-          :class="{ 'opacity-0': msg.text === '' }"
-          v-html="renderMarkdown(msg.text)"
-        ></div>
-      </div>
-
-      <!-- Typing dots — только пока первый токен не пришёл -->
-      <div v-if="typing" class="msg-row ai">
-        <div class="msg-bubble typing">
-          <span class="dot" /><span class="dot" /><span class="dot" />
-        </div>
-      </div>
-    </div>
-
-    <!-- Input area -->
-    <div
-      class="px-4 py-3 border-t border-[rgba(255,122,0,0.08)] flex items-center gap-2 bg-light-bg"
-    >
-      <div class="flex items-center gap-2 shrink-0">
-        <input
-          ref="fileInput"
-          type="file"
-          accept="image/*"
-          class="hidden"
-          @change="handleFileChange"
-        />
-
-        <button
-          type="button"
-          class="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#FF9A2F] hover:bg-[#FFE8D1] transition-all cursor-pointer group"
-          title="Загрузить фото продуктов"
-          @click="triggerFileInput"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            class="w-5 h-5 text-gray-400 group-hover:text-[#E96F00]"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-            />
-          </svg>
-        </button>
-
-        <!-- Превью выбранной картинки над инпутом -->
-        <div v-if="selectedImage" class="relative w-10 h-10 shrink-0">
-          <img
-            :src="selectedImage"
-            class="w-full h-full object-cover rounded-lg border border-[rgba(255,122,0,0.2)]"
-          />
-          <button
-            class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center leading-none"
-            @click="clearImage"
-          >
-            ✕
-          </button>
-        </div>
-      </div>
-
-      <input
-        v-model="inputVal"
-        type="text"
-        placeholder="What's in your fridge today?"
-        class="flex-1 bg-white border border-[rgba(255,122,0,0.15)] rounded-[10px] px-3.5 py-2.5 text-[13px] text-dark font-body outline-none transition-colors duration-200 focus:border-primary placeholder:text-dark-muted placeholder:opacity-60"
-        @keydown.enter="sendMessage"
-      />
-
-      <button
-        class="w-10 h-10 shrink-0 bg-primary rounded-[10px] text-white flex items-center justify-center transition-all duration-200 hover:bg-primary-hover hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-        :disabled="typing"
-        aria-label="Send"
-        @click="sendMessage"
-      >
-        <svg v-if="!typing" width="18" height="18" viewBox="0 0 18 18" fill="none">
-          <path d="M2 9l14-7-5 7 5 7-14-7z" fill="currentColor" />
-        </svg>
-        <svg v-else class="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle
-            cx="8"
-            cy="8"
-            r="6"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-dasharray="28"
-            stroke-dashoffset="10"
-            stroke-linecap="round"
-          />
-        </svg>
-      </button>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { ref, nextTick } from 'vue'
 import { imageToBase64 } from '@/features/ai'
@@ -315,6 +153,165 @@ async function sendMessage() {
   }
 }
 </script>
+
+<template>
+  <div
+    class="bg-white border border-[rgba(255,122,0,0.15)] rounded-[22px] overflow-hidden shadow-brand-lg"
+  >
+    <!-- Header -->
+    <div
+      class="px-5 py-4 border-b border-[rgba(255,122,0,0.08)] flex items-center gap-2.5 bg-light-bg"
+    >
+      <div
+        class="w-[38px] h-[38px] rounded-[10px] flex items-center justify-center text-xl border border-[rgba(255,122,0,0.2)]"
+        style="background: linear-gradient(135deg, #ffe8d1, #ffc078)"
+      >
+        🤖
+      </div>
+      <div class="flex-1">
+        <span class="block font-display font-bold text-[14px] text-dark">ChefAI Assistant</span>
+        <span class="flex items-center gap-1.5 text-[11px] text-primary">
+          <span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse-brand" />
+          Online · Qwen AI
+        </span>
+      </div>
+      <span
+        class="bg-primary-soft text-primary text-[10px] font-bold tracking-[0.1em] px-2 py-0.5 rounded-md border border-[rgba(255,122,0,0.2)]"
+      >
+        AI
+      </span>
+    </div>
+
+    <!-- Messages -->
+    <div ref="messagesRef" class="p-5 flex flex-col gap-3 overflow-y-auto scroll-smooth h-80">
+      <div
+        v-for="(msg, i) in visibleMessages"
+        :key="i"
+        class="flex"
+        :class="msg.role === 'user' ? 'justify-end' : 'justify-start'"
+      >
+        <!-- ── Сообщение пользователя ── -->
+        <div v-if="msg.role === 'user'" class="max-w-[78%] flex flex-col gap-1.5 items-end">
+          <!-- Картинка — показывается если есть image -->
+          <img
+            v-if="msg.image"
+            :src="msg.image"
+            class="rounded-[10px] max-w-[180px] max-h-[140px] object-cover border border-[rgba(255,122,0,0.2)]"
+            alt="uploaded"
+          />
+          <!-- Текст — показывается если есть text -->
+          <div
+            v-if="msg.text"
+            class="px-4 py-[11px] rounded-[14px] rounded-br-[4px] text-[13.5px] leading-[1.55] bg-primary text-white"
+          >
+            {{ msg.text }}
+          </div>
+        </div>
+
+        <!-- ── Ответ AI — markdown через v-html ── -->
+        <!--
+          Явный закрывающий тег </div> обязателен с v-html:
+          self-closing <div /> поглощает следующие узлы как дочерние.
+        -->
+        <div
+          v-else
+          class="max-w-[78%] px-4 py-[11px] rounded-[14px] rounded-bl-[4px] text-[13.5px] leading-[1.55] bg-light-bg text-dark border border-[rgba(255,122,0,0.08)] prose prose-sm"
+          :class="{ 'opacity-0': msg.text === '' }"
+          v-html="renderMarkdown(msg.text)"
+        ></div>
+      </div>
+
+      <!-- Typing dots — только пока первый токен не пришёл -->
+      <div v-if="typing" class="msg-row ai">
+        <div class="msg-bubble typing">
+          <span class="dot" /><span class="dot" /><span class="dot" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Input area -->
+    <div
+      class="px-4 py-3 border-t border-[rgba(255,122,0,0.08)] flex items-center gap-2 bg-light-bg"
+    >
+      <div class="flex items-center gap-2 shrink-0">
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          class="hidden"
+          @change="handleFileChange"
+        />
+
+        <button
+          type="button"
+          class="flex items-center justify-center w-10 h-10 rounded-xl border-2 border-dashed border-gray-300 hover:border-[#FF9A2F] hover:bg-[#FFE8D1] transition-all cursor-pointer group"
+          title="Загрузить фото продуктов"
+          @click="triggerFileInput"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-5 h-5 text-gray-400 group-hover:text-[#E96F00]"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        </button>
+
+        <!-- Превью выбранной картинки над инпутом -->
+        <div v-if="selectedImage" class="relative w-10 h-10 shrink-0">
+          <img
+            :src="selectedImage"
+            class="w-full h-full object-cover rounded-lg border border-[rgba(255,122,0,0.2)]"
+          />
+          <button
+            class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center leading-none"
+            @click="clearImage"
+          >
+            ✕
+          </button>
+        </div>
+      </div>
+
+      <input
+        v-model="inputVal"
+        type="text"
+        placeholder="What's in your fridge today?"
+        class="flex-1 bg-white border border-[rgba(255,122,0,0.15)] rounded-[10px] px-3.5 py-2.5 text-[13px] text-dark font-body outline-none transition-colors duration-200 focus:border-primary placeholder:text-dark-muted placeholder:opacity-60"
+        @keydown.enter="sendMessage"
+      />
+
+      <button
+        class="w-10 h-10 shrink-0 bg-primary rounded-[10px] text-white flex items-center justify-center transition-all duration-200 hover:bg-primary-hover hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+        :disabled="typing"
+        aria-label="Send"
+        @click="sendMessage"
+      >
+        <svg v-if="!typing" width="18" height="18" viewBox="0 0 18 18" fill="none">
+          <path d="M2 9l14-7-5 7 5 7-14-7z" fill="currentColor" />
+        </svg>
+        <svg v-else class="animate-spin" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <circle
+            cx="8"
+            cy="8"
+            r="6"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-dasharray="28"
+            stroke-dashoffset="10"
+            stroke-linecap="round"
+          />
+        </svg>
+      </button>
+    </div>
+  </div>
+</template>
 
 <style scoped>
 /* Кастомный тонкий скроллбар — Tailwind не умеет это из коробки */
