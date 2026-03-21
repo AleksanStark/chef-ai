@@ -1,3 +1,16 @@
+<script setup lang="ts">
+// 'Documentation', 'FAQ', 'Status', 'Pricing', 'Changelog' 'Blog', 'Careers'
+
+const COLUMNS = [
+  {
+    title: 'Product',
+    links: ['Features', 'How it works'],
+  },
+  { title: 'Company', links: ['About', 'Team'] },
+  { title: 'Support', links: ['Contact'] },
+]
+</script>
+
 <template>
   <footer>
     <div class="footer-inner">
@@ -17,7 +30,7 @@
     </div>
 
     <div class="footer-bottom">
-      <span>© 2025 FridgeAI. Built with ❤️ and Qwen AI by two developers.</span>
+      <span>© 2025 ChefAI. Built with ❤️ and Qwen AI by two developers.</span>
       <div class="footer-bottom-links">
         <a href="#">Privacy</a>
         <a href="#">Terms</a>
@@ -26,17 +39,6 @@
     </div>
   </footer>
 </template>
-
-<script setup lang="ts">
-const COLUMNS = [
-  {
-    title: "Product",
-    links: ["Features", "How it works", "Pricing", "Changelog"],
-  },
-  { title: "Company", links: ["About", "Team", "Blog", "Careers"] },
-  { title: "Support", links: ["Documentation", "FAQ", "Contact", "Status"] },
-];
-</script>
 
 <style scoped>
 footer {
@@ -54,7 +56,7 @@ footer {
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 .logo {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 900;
   font-size: 20px;
   color: var(--accent-light);
