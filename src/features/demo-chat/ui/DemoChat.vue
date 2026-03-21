@@ -190,7 +190,7 @@ async function sendMessage() {
       messages.push({ role: 'user', content: text })
     }
 
-    const model = 'openai/gpt-5.4-nano' // текст + фото
+    const model = 'openai/gpt-5.4-nan' // текст + фото
 
     // ── Шаг 4: стриминг ──────────────────────────────────────────────────────
     const stream = await openai.chat.completions.create({
