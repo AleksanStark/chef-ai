@@ -1,3 +1,228 @@
+<script setup lang="ts">
+import { ref, nextTick } from 'vue'
+import { imageToBase64 } from '@/features/ai'
+import { marked } from 'marked'
+import OpenAI from 'openai'
+
+// ── Интерфейс сообщения ──────────────────────────────────────────────────────
+// Раньше был один html: string — это мешало отображать картинку и текст отдельно.
+// Теперь два независимых поля:
+//   text  — текстовое содержимое (у AI — markdown, у user — plain text)
+//   image — data URL для превью картинки (только у user-сообщений)
+interface Message {
+  role: 'user' | 'ai'
+  text: string
+  image?: string // data URL, только для user-сообщений с картинкой
+}
+
+// ── OpenAI client ────────────────────────────────────────────────────────────
+const openai = new OpenAI({
+  baseURL: 'https://openrouter.ai/api/v1',
+  apiKey: import.meta.env.VITE_OPEN_ROUTER_API_KEY,
+  dangerouslyAllowBrowser: true,
+})
+
+const SYSTEM_PROMPT = `You are ChefAI: a professional dietitian, nutritionist, and chef with expert knowledge in nutrition, health, and cooking.
+
+Your task:
+Create personalized meal plans, recipes, and recommendations based on:
+- User goals (weight loss, muscle gain, maintenance)
+- Available ingredients
+- Preferences and restrictions (allergies, diets)
+- Image analysis (if provided)
+
+CORE CAPABILITIES:
+1. Build complete meal plans (daily / weekly)
+2. Calculate macros: calories, protein, fat, carbs, fiber
+3. Generate recipes with step-by-step instructions
+4. Analyze ingredients and dishes from photos
+5. Create minimal shopping lists (no unnecessary items)
+6. Adapt to user taste (avoid repetition)
+7. Work even with incomplete data (make logical assumptions)
+
+BEHAVIOR:
+- Respond concisely, clearly, and to the point
+- No unnecessary preambles or lengthy explanations
+- Structure responses (lists, blocks)
+- Do not repeat yourself
+- Offer practical, actionable solutions
+
+LANGUAGE RULE:
+- Detect the language the user writes in and respond in that same language
+- Do not switch languages mid-response
+- If the user writes in Russian — respond in Russian; English — in English; etc.
+
+STRICT RULES:
+1. Always provide macros: calories, protein, fat, carbs
+2. Always include fiber when possible
+3. For meal plans — structure by days
+4. If a photo is provided — analyze it first
+5. If data is limited — make reasonable assumptions
+6. If the request is unrelated to food — politely decline
+
+RESPONSE FORMAT (STANDARD):
+
+📅 Plan (if needed):
+Day 1:
+- Breakfast:
+- Lunch:
+- Dinner:
+
+📊 Macros (per dish or per day):
+Calories: XXX kcal
+Protein: XX g
+Fat: XX g
+Carbs: XX g
+Fiber: XX g
+
+🍽 Recipe (if needed):
+1. ...
+2. ...
+
+🛒 Shopping List:
+- item 1
+- item 2
+
+IMPORTANT:
+- Avoid identical meals unless requested
+- Keep meal plans realistic
+- Balance macronutrients
+- Act as a smart chef, not just a text generator
+
+YOU ARE A UNIVERSAL AI CHEF:
+You can:
+- Build a diet for any person or persona
+- Analyze food or ingredient photos
+- Help at every stage of cooking
+- Suggest ingredient substitutions
+- Provide real-time cooking advice
+
+GOAL:
+Deliver the most useful, practical, and actionable result for the user.`
+
+// ── State ────────────────────────────────────────────────────────────────────
+const visibleMessages = ref<Message[]>([])
+const typing = ref(false)
+const isStreaming = ref(false)
+const inputVal = ref('')
+const fileInput = ref<HTMLInputElement | null>(null)
+const selectedImage = ref<string | null>(null) // data URL для превью в инпуте
+const messagesRef = ref<HTMLElement | null>(null)
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function renderMarkdown(text: string): string {
+  return marked.parse(text) as string
+}
+
+async function scrollToBottom() {
+  await nextTick()
+  messagesRef.value?.scrollTo({
+    top: messagesRef.value.scrollHeight,
+    behavior: 'smooth',
+  })
+}
+
+// ── File handling ─────────────────────────────────────────────────────────────
+function triggerFileInput() {
+  fileInput.value?.click()
+}
+
+function handleFileChange(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0]
+  if (!file) return
+  // Создаём blob URL только для превью в инпуте.
+  // Для отправки в API позже вызовем imageToBase64(file) отдельно.
+  selectedImage.value = URL.createObjectURL(file)
+}
+
+function clearImage() {
+  // Освобождаем blob URL чтобы избежать утечки памяти
+  if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
+  selectedImage.value = null
+  if (fileInput.value) fileInput.value.value = ''
+}
+
+// ── Send message ──────────────────────────────────────────────────────────────
+async function sendMessage() {
+  const text = inputVal.value.trim()
+  const file = fileInput.value?.files?.[0]
+
+  if ((!text && !file) || typing.value) return
+
+  inputVal.value = ''
+
+  // ── Шаг 1: формируем сообщение пользователя ─────────────────────────────
+  // image: selectedImage.value — это blob URL только для отображения в чате.
+  // Для API нужен base64, конвертируем его отдельно ниже.
+  visibleMessages.value.push({
+    role: 'user',
+    text,
+    // Сохраняем текущий blob URL в сообщение ДО вызова clearImage()
+    image: selectedImage.value ?? undefined,
+  })
+  await scrollToBottom()
+
+  // ── Шаг 2: typing + резервный пузырь AI ──────────────────────────────────
+  typing.value = true
+  isStreaming.value = false
+  await scrollToBottom()
+
+  const aiIndex = visibleMessages.value.length
+  visibleMessages.value.push({ role: 'ai', text: '' })
+
+  try {
+    // ── Шаг 3: строим messages для API ───────────────────────────────────────
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: 'system', content: SYSTEM_PROMPT },
+    ]
+
+    if (file) {
+      // imageToBase64 возвращает data URL (data:image/...;base64,...)
+      // OpenRouter принимает его напрямую в image_url
+      const base64 = await imageToBase64(file)
+      messages.push({
+        role: 'user',
+        content: [{ type: 'image_url', image_url: { url: base64 } }],
+      })
+    }
+
+    if (text) {
+      messages.push({ role: 'user', content: text })
+    }
+
+    // ── Шаг 4: стриминг ──────────────────────────────────────────────────────
+    const stream = await openai.chat.completions.create({
+      model: 'qwen/qwen3.5-9b',
+      messages,
+      stream: true,
+    })
+
+    let accumulated = ''
+
+    for await (const chunk of stream) {
+      const delta = chunk.choices[0]?.delta?.content ?? ''
+      if (!delta) continue
+
+      if (!isStreaming.value) isStreaming.value = true
+
+      accumulated += delta
+      visibleMessages.value[aiIndex]!.text = accumulated
+      await scrollToBottom()
+    }
+
+    // Очищаем картинку только после успешной отправки
+    clearImage()
+  } catch (e) {
+    console.error(e)
+    visibleMessages.value[aiIndex]!.text = '⚠️ **Что-то пошло не так.** Попробуй ещё раз.'
+    await scrollToBottom()
+  } finally {
+    typing.value = false
+    isStreaming.value = false
+  }
+}
+</script>
+
 <template>
   <div
     class="bg-white border border-[rgba(255,122,0,0.15)] rounded-[22px] overflow-hidden shadow-brand-lg"
@@ -27,10 +252,7 @@
     </div>
 
     <!-- Messages -->
-    <div
-      ref="messagesRef"
-      class="px-5 py-5 flex flex-col gap-3 overflow-y-auto scroll-smooth h-[173px]"
-    >
+    <div ref="messagesRef" class="p-5 flex flex-col gap-3 overflow-y-auto scroll-smooth h-80">
       <div
         v-for="(msg, i) in visibleMessages"
         :key="i"
@@ -159,162 +381,6 @@
     </div>
   </div>
 </template>
-
-<script setup lang="ts">
-import { ref, nextTick } from 'vue'
-import { imageToBase64 } from '@/features/ai'
-import { marked } from 'marked'
-import OpenAI from 'openai'
-
-// ── Интерфейс сообщения ──────────────────────────────────────────────────────
-// Раньше был один html: string — это мешало отображать картинку и текст отдельно.
-// Теперь два независимых поля:
-//   text  — текстовое содержимое (у AI — markdown, у user — plain text)
-//   image — data URL для превью картинки (только у user-сообщений)
-interface Message {
-  role: 'user' | 'ai'
-  text: string
-  image?: string // data URL, только для user-сообщений с картинкой
-}
-
-// ── OpenAI client ────────────────────────────────────────────────────────────
-const openai = new OpenAI({
-  baseURL: 'https://openrouter.ai/api/v1',
-  apiKey: import.meta.env.VITE_OPEN_ROUTER_API_KEY,
-  dangerouslyAllowBrowser: true,
-})
-
-const SYSTEM_PROMPT = `Ты профессиональный диетолог и шеф-повар.
-Твоя задача: помогать пользователю строить сбалансированный рацион и желаемую им диету из доступных продуктов.
-
-СТРОГИЕ ПРАВИЛА:
-1. Отвечай кратко, по делу, без лишних вступлений.
-2. Делай расчет КБЖУ и расписание питания по дням.
-3. Отвечай СТРОГО на русском языке. Никакого китайского или английского.
-4. Если запрос не касается еды, рецептов или диеты — вежливо откажи в обслуживании.`
-
-// ── State ────────────────────────────────────────────────────────────────────
-const visibleMessages = ref<Message[]>([])
-const typing = ref(false)
-const isStreaming = ref(false)
-const inputVal = ref('')
-const fileInput = ref<HTMLInputElement | null>(null)
-const selectedImage = ref<string | null>(null) // data URL для превью в инпуте
-const messagesRef = ref<HTMLElement | null>(null)
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-function renderMarkdown(text: string): string {
-  return marked.parse(text) as string
-}
-
-async function scrollToBottom() {
-  await nextTick()
-  messagesRef.value?.scrollTo({
-    top: messagesRef.value.scrollHeight,
-    behavior: 'smooth',
-  })
-}
-
-// ── File handling ─────────────────────────────────────────────────────────────
-function triggerFileInput() {
-  fileInput.value?.click()
-}
-
-function handleFileChange(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
-  // Создаём blob URL только для превью в инпуте.
-  // Для отправки в API позже вызовем imageToBase64(file) отдельно.
-  selectedImage.value = URL.createObjectURL(file)
-}
-
-function clearImage() {
-  // Освобождаем blob URL чтобы избежать утечки памяти
-  if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
-  selectedImage.value = null
-  if (fileInput.value) fileInput.value.value = ''
-}
-
-// ── Send message ──────────────────────────────────────────────────────────────
-async function sendMessage() {
-  const text = inputVal.value.trim()
-  const file = fileInput.value?.files?.[0]
-
-  if ((!text && !file) || typing.value) return
-
-  inputVal.value = ''
-
-  // ── Шаг 1: формируем сообщение пользователя ─────────────────────────────
-  // image: selectedImage.value — это blob URL только для отображения в чате.
-  // Для API нужен base64, конвертируем его отдельно ниже.
-  visibleMessages.value.push({
-    role: 'user',
-    text,
-    // Сохраняем текущий blob URL в сообщение ДО вызова clearImage()
-    image: selectedImage.value ?? undefined,
-  })
-  await scrollToBottom()
-
-  // ── Шаг 2: typing + резервный пузырь AI ──────────────────────────────────
-  typing.value = true
-  isStreaming.value = false
-  await scrollToBottom()
-
-  const aiIndex = visibleMessages.value.length
-  visibleMessages.value.push({ role: 'ai', text: '' })
-
-  try {
-    // ── Шаг 3: строим messages для API ───────────────────────────────────────
-    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
-      { role: 'system', content: SYSTEM_PROMPT },
-    ]
-
-    if (file) {
-      // imageToBase64 возвращает data URL (data:image/...;base64,...)
-      // OpenRouter принимает его напрямую в image_url
-      const base64 = await imageToBase64(file)
-      messages.push({
-        role: 'user',
-        content: [{ type: 'image_url', image_url: { url: base64 } }],
-      })
-    }
-
-    if (text) {
-      messages.push({ role: 'user', content: text })
-    }
-
-    // ── Шаг 4: стриминг ──────────────────────────────────────────────────────
-    const stream = await openai.chat.completions.create({
-      model: 'qwen/qwen3.5-9b',
-      messages,
-      stream: true,
-    })
-
-    let accumulated = ''
-
-    for await (const chunk of stream) {
-      const delta = chunk.choices[0]?.delta?.content ?? ''
-      if (!delta) continue
-
-      if (!isStreaming.value) isStreaming.value = true
-
-      accumulated += delta
-      visibleMessages.value[aiIndex]!.text = accumulated
-      await scrollToBottom()
-    }
-
-    // Очищаем картинку только после успешной отправки
-    clearImage()
-  } catch (e) {
-    console.error(e)
-    visibleMessages.value[aiIndex]!.text = '⚠️ **Что-то пошло не так.** Попробуй ещё раз.'
-    await scrollToBottom()
-  } finally {
-    typing.value = false
-    isStreaming.value = false
-  }
-}
-</script>
 
 <style scoped>
 /* Кастомный тонкий скроллбар — Tailwind не умеет это из коробки */

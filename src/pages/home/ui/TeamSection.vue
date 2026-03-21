@@ -1,8 +1,46 @@
+<script setup lang="ts">
+import { SectionLabel, BaseButton } from '@/shared/ui'
+
+const TEAM = [
+  {
+    emoji: '👨‍💻',
+    name: 'Ibrahim Chekmazov',
+    role: 'Full-stack Developer',
+    bio: 'A full-stack developer with extensive experience. Strong knowledge of backend architecture, frontend development, and the creation of production-ready features.',
+    tags: [
+      'JavaScript',
+      'CSS',
+      'TypeScript',
+      'Vue',
+      'HTML',
+      'Node.js',
+      'Firebase',
+      'Express.js',
+      'Java',
+      'Spring',
+      'MongoDB',
+      'React',
+      'SASS',
+      'Flutter',
+    ],
+    bg: 'linear-gradient(135deg, #FFE8D1, #FFC078)',
+  },
+  {
+    emoji: '👨‍💻',
+    name: 'Aleksan Vartapetyan',
+    role: 'Full-stack Developer',
+    bio: 'Frontend engineering, UX design, and product vision. Turns complex AI outputs into beautiful user experiences.',
+    tags: ['TypeScript', 'TailwindCSS', 'REST APIs', 'UI/UX'],
+    bg: 'linear-gradient(135deg, #FFE8D1, #FF9A2F44)',
+  },
+]
+</script>
+
 <template>
   <section id="team" class="team-section">
     <div class="team-inner">
       <div class="team-header reveal">
-        <SectionLabel>The team</SectionLabel>
+        <SectionLabel>The atlasDEV team</SectionLabel>
         <h2 class="text-[24px]">Built by two full-stack devs<br />who love good food</h2>
         <p class="section-sub">
           We're a two-person team looking for clients and investors who believe in zero food waste
@@ -56,29 +94,6 @@
     </div>
   </section>
 </template>
-
-<script setup lang="ts">
-import { SectionLabel, BaseButton } from '@/shared/ui'
-
-const TEAM = [
-  {
-    emoji: '👨‍💻',
-    name: 'Ibrahim Chekmazov',
-    role: 'Full-stack Developer',
-    bio: 'Backend architecture, AI integration, and system design. Built the Qwen pipeline and API layer from scratch.',
-    tags: ['Vue 3', 'Node.js', 'Qwen AI', 'PostgreSQL'],
-    bg: 'linear-gradient(135deg, #FFE8D1, #FFC078)',
-  },
-  {
-    emoji: '👨‍💻',
-    name: 'Aleksan Vartapetyan',
-    role: 'Full-stack Developer',
-    bio: 'Frontend engineering, UX design, and product vision. Turns complex AI outputs into beautiful user experiences.',
-    tags: ['TypeScript', 'TailwindCSS', 'REST APIs', 'UI/UX'],
-    bg: 'linear-gradient(135deg, #FFE8D1, #FF9A2F44)',
-  },
-]
-</script>
 
 <style scoped>
 .team-section {
