@@ -34,8 +34,6 @@ const FLOAT_TAGS = [
   },
 ]
 
-const PROOF_AVATARS = ['👩‍🍳', '👨‍💻', '🧑‍🎓', '👩‍⚕️']
-
 const STATS = [
   { num: '2 min', label: 'To your recipe' },
   { num: '500+', label: 'Recipes generated' },
@@ -61,7 +59,7 @@ const STATS = [
     <div class="hero-inner">
       <div class="hero-badge">
         <span class="badge-pulse" />
-        Powered by Qwen AI
+        Powered by Chatgpt AI
       </div>
 
       <h1 class="hero-title">

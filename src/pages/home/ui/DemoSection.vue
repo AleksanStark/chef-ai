@@ -18,7 +18,7 @@
 
         <div class="tech-row">
           <span class="tech-label">Built with</span>
-          <span class="tech-badge qwen">Qwen 2.5</span>
+          <span class="tech-badge qwen">Chatgpt 5.4</span>
           <span class="tech-badge">Vue 3</span>
           <span class="tech-badge">TypeScript</span>
         </div>
