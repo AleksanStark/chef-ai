@@ -1,3 +1,49 @@
+<script setup lang="ts">
+import { BaseButton } from '@/shared/ui'
+
+const FLOAT_TAGS = [
+  {
+    emoji: '🥚',
+    label: 'Eggs × 3',
+    style: 'top:22%;left:5%;animation-delay:0s;animation-duration:18s',
+  },
+  {
+    emoji: '🧀',
+    label: 'Cheddar',
+    style: 'top:40%;left:2%;animation-delay:3s;animation-duration:22s',
+  },
+  {
+    emoji: '🥦',
+    label: 'Broccoli',
+    style: 'top:62%;left:6%;animation-delay:1.5s;animation-duration:19s',
+  },
+  {
+    emoji: '🍋',
+    label: 'Lemon',
+    style: 'top:20%;right:5%;animation-delay:2s;animation-duration:20s',
+  },
+  {
+    emoji: '🐟',
+    label: 'Salmon',
+    style: 'top:44%;right:3%;animation-delay:4s;animation-duration:21s',
+  },
+  {
+    emoji: '🧄',
+    label: 'Garlic',
+    style: 'top:65%;right:7%;animation-delay:0.8s;animation-duration:17s',
+  },
+]
+
+const PROOF_AVATARS = ['👩‍🍳', '👨‍💻', '🧑‍🎓', '👩‍⚕️']
+
+const STATS = [
+  { num: '2 min', label: 'To your recipe' },
+  { num: '500+', label: 'Recipes generated' },
+  { num: '0%', label: 'Food wasted' },
+  { num: '100%', label: 'Your ingredients' },
+]
+</script>
+
 <template>
   <section class="hero">
     <div class="hero-bg-circle circle-1" />
@@ -7,12 +53,7 @@
 
     <!-- Floating ingredient tags -->
     <div class="floating-tags" aria-hidden="true">
-      <div
-        v-for="(tag, i) in FLOAT_TAGS"
-        :key="i"
-        class="ftag"
-        :style="tag.style"
-      >
+      <div v-for="(tag, i) in FLOAT_TAGS" :key="i" class="ftag" :style="tag.style">
         {{ tag.emoji }} {{ tag.label }}
       </div>
     </div>
@@ -30,8 +71,8 @@
       </h1>
 
       <p class="hero-sub">
-        Tell us what's in your fridge — we'll craft personalized recipes and
-        diet plans tailored to your health goals, using exactly what you have.
+        Tell us what's in your fridge — we'll craft personalized recipes and diet plans tailored to
+        your health goals, using exactly what you have.
       </p>
 
       <div class="hero-actions">
@@ -44,16 +85,12 @@
         <BaseButton variant="outline" href="#how">See how it works</BaseButton>
       </div>
 
-      <div class="hero-proof">
+      <!-- <div class="hero-proof">
         <div class="proof-avatars">
-          <span v-for="e in PROOF_AVATARS" :key="e" class="avatar">{{
-            e
-          }}</span>
+          <span v-for="e in PROOF_AVATARS" :key="e" class="avatar">{{ e }}</span>
         </div>
-        <span class="proof-text"
-          ><strong>500+</strong> people already eating smarter</span
-        >
-      </div>
+        <span class="proof-text"><strong>500+</strong> people already eating smarter</span>
+      </div> -->
     </div>
 
     <div class="hero-stats">
@@ -64,52 +101,6 @@
     </div>
   </section>
 </template>
-
-<script setup lang="ts">
-import { BaseButton } from "@/shared/ui";
-
-const FLOAT_TAGS = [
-  {
-    emoji: "🥚",
-    label: "Eggs × 3",
-    style: "top:22%;left:5%;animation-delay:0s;animation-duration:18s",
-  },
-  {
-    emoji: "🧀",
-    label: "Cheddar",
-    style: "top:40%;left:2%;animation-delay:3s;animation-duration:22s",
-  },
-  {
-    emoji: "🥦",
-    label: "Broccoli",
-    style: "top:62%;left:6%;animation-delay:1.5s;animation-duration:19s",
-  },
-  {
-    emoji: "🍋",
-    label: "Lemon",
-    style: "top:20%;right:5%;animation-delay:2s;animation-duration:20s",
-  },
-  {
-    emoji: "🐟",
-    label: "Salmon",
-    style: "top:44%;right:3%;animation-delay:4s;animation-duration:21s",
-  },
-  {
-    emoji: "🧄",
-    label: "Garlic",
-    style: "top:65%;right:7%;animation-delay:0.8s;animation-duration:17s",
-  },
-];
-
-const PROOF_AVATARS = ["👩‍🍳", "👨‍💻", "🧑‍🎓", "👩‍⚕️"];
-
-const STATS = [
-  { num: "2 min", label: "To your recipe" },
-  { num: "500+", label: "Recipes generated" },
-  { num: "0%", label: "Food wasted" },
-  { num: "100%", label: "Your ingredients" },
-];
-</script>
 
 <style scoped>
 .hero {
@@ -132,11 +123,7 @@ const STATS = [
 .circle-1 {
   width: 600px;
   height: 600px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 122, 0, 0.09) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(255, 122, 0, 0.09) 0%, transparent 70%);
   top: -100px;
   left: 50%;
   transform: translateX(-50%);
@@ -144,39 +131,23 @@ const STATS = [
 .circle-2 {
   width: 400px;
   height: 400px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 192, 120, 0.12) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(255, 192, 120, 0.12) 0%, transparent 70%);
   bottom: 0;
   right: -100px;
 }
 .circle-3 {
   width: 300px;
   height: 300px;
-  background: radial-gradient(
-    circle,
-    rgba(255, 154, 47, 0.08) 0%,
-    transparent 70%
-  );
+  background: radial-gradient(circle, rgba(255, 154, 47, 0.08) 0%, transparent 70%);
   top: 30%;
   left: -80px;
 }
 .hero-dots {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(
-    circle,
-    rgba(255, 122, 0, 0.15) 1px,
-    transparent 1px
-  );
+  background-image: radial-gradient(circle, rgba(255, 122, 0, 0.15) 1px, transparent 1px);
   background-size: 36px 36px;
-  mask-image: radial-gradient(
-    ellipse 80% 60% at 50% 40%,
-    black 0%,
-    transparent 70%
-  );
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 0%, transparent 70%);
 }
 
 .floating-tags {
@@ -232,7 +203,7 @@ const STATS = [
 }
 
 .hero-title {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 900;
   font-size: clamp(52px, 8vw, 100px);
   line-height: 0.95;
@@ -246,7 +217,7 @@ const STATS = [
   position: relative;
 }
 .hero-title em::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: 2px;
   left: 0;
@@ -337,7 +308,7 @@ const STATS = [
   border-right: none;
 }
 .stat-num {
-  font-family: "Fraunces", serif;
+  font-family: 'Fraunces', serif;
   font-weight: 900;
   font-size: 30px;
   letter-spacing: -0.03em;
