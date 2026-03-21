@@ -190,16 +190,13 @@ async function sendMessage() {
       messages.push({ role: 'user', content: text })
     }
 
-    const model = selectedImage.value
-      ? 'qwen/qwen-2.5-vl-7b-instruct' // текст + фото
-      : 'qwen/qwen3-30b-a3b'
+    const model = 'openai/gpt-5.4-nano' // текст + фото
 
     // ── Шаг 4: стриминг ──────────────────────────────────────────────────────
     const stream = await openai.chat.completions.create({
       model,
       messages,
       stream: true,
-      max_tokens: 1000,
       ...(selectedImage.value ? {} : { extra_body: { thinking: false } }),
     })
 

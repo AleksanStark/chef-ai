@@ -61,7 +61,7 @@ const STATS = [
     <div class="hero-inner">
       <div class="hero-badge">
         <span class="badge-pulse" />
-        Powered by Qwen AI
+        Powered by ChatGPT AI
       </div>
 
       <h1 class="hero-title">
