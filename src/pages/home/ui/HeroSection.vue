@@ -34,8 +34,6 @@ const FLOAT_TAGS = [
   },
 ]
 
-const PROOF_AVATARS = ['👩‍🍳', '👨‍💻', '🧑‍🎓', '👩‍⚕️']
-
 const STATS = [
   { num: '2 min', label: 'To your recipe' },
   { num: '500+', label: 'Recipes generated' },
