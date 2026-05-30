@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, reactive } from 'vue'
 import { imageToBase64 } from '@/features/ai'
 import { marked } from 'marked'
 import OpenAI from 'openai'
@@ -106,7 +106,7 @@ const typing = ref(false)
 const isStreaming = ref(false)
 const inputVal = ref('')
 const fileInput = ref<HTMLInputElement | null>(null)
-const selectedImage = ref<string | null>(null) // data URL для превью в инпуте
+const selectedImages = reactive<{ image: string }[]>([]) // data URL для превью в инпуте
 const messagesRef = ref<HTMLElement | null>(null)
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -128,38 +128,46 @@ function triggerFileInput() {
 }
 
 function handleFileChange(event: Event) {
-  const file = (event.target as HTMLInputElement).files?.[0]
-  if (!file) return
+  const files = (event.target as HTMLInputElement).files
+  if (!files) return
   // Создаём blob URL только для превью в инпуте.
   // Для отправки в API позже вызовем imageToBase64(file) отдельно.
-  selectedImage.value = URL.createObjectURL(file)
+  for (const file of files) {
+    const img = URL.createObjectURL(file)
+    selectedImages.push({ image: img })
+  }
 }
 
 function clearImage() {
   // Освобождаем blob URL чтобы избежать утечки памяти
-  if (selectedImage.value) URL.revokeObjectURL(selectedImage.value)
-  selectedImage.value = null
+  if (selectedImages.length) selectedImages.length = 0
   if (fileInput.value) fileInput.value.value = ''
+}
+
+function removeImage(index: number) {
+  selectedImages.splice(index, 1)
 }
 
 // ── Send message ──────────────────────────────────────────────────────────────
 async function sendMessage() {
   const text = inputVal.value.trim()
-  const file = fileInput.value?.files?.[0]
+  const files = fileInput.value?.files
 
-  if ((!text && !file) || typing.value) return
+  if ((!text && !files) || typing.value) return
 
   inputVal.value = ''
 
   // ── Шаг 1: формируем сообщение пользователя ─────────────────────────────
   // image: selectedImage.value — это blob URL только для отображения в чате.
   // Для API нужен base64, конвертируем его отдельно ниже.
-  visibleMessages.value.push({
-    role: 'user',
-    text,
-    // Сохраняем текущий blob URL в сообщение ДО вызова clearImage()
-    image: selectedImage.value ?? undefined,
-  })
+  for (const img of selectedImages) {
+    visibleMessages.value.push({
+      role: 'user',
+      text,
+      // Сохраняем текущий blob URL в сообщение ДО вызова clearImage()
+      image: img.image ?? undefined,
+    })
+  }
   await scrollToBottom()
 
   // ── Шаг 2: typing + резервный пузырь AI ──────────────────────────────────
@@ -176,14 +184,16 @@ async function sendMessage() {
       { role: 'system', content: SYSTEM_PROMPT },
     ]
 
-    if (file) {
+    if (files) {
       // imageToBase64 возвращает data URL (data:image/...;base64,...)
       // OpenRouter принимает его напрямую в image_url
-      const base64 = await imageToBase64(file)
-      messages.push({
-        role: 'user',
-        content: [{ type: 'image_url', image_url: { url: base64 } }],
-      })
+      for (const file of files) {
+        const base64 = await imageToBase64(file)
+        messages.push({
+          role: 'user',
+          content: [{ type: 'image_url', image_url: { url: base64 } }],
+        })
+      }
     }
 
     if (text) {
@@ -197,7 +207,7 @@ async function sendMessage() {
       model,
       messages,
       stream: true,
-      ...(selectedImage.value ? {} : { extra_body: { thinking: false } }),
+      // ...(selectedImages.value ? {} : { extra_body: { thinking: false } }),
     })
 
     let accumulated = ''
@@ -309,6 +319,7 @@ async function sendMessage() {
         <input
           ref="fileInput"
           type="file"
+          multiple
           accept="image/*"
           class="hidden"
           @change="handleFileChange"
@@ -337,17 +348,23 @@ async function sendMessage() {
         </button>
 
         <!-- Превью выбранной картинки над инпутом -->
-        <div v-if="selectedImage" class="relative w-10 h-10 shrink-0">
-          <img
-            :src="selectedImage"
-            class="w-full h-full object-cover rounded-lg border border-[rgba(255,122,0,0.2)]"
-          />
-          <button
-            class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center leading-none"
-            @click="clearImage"
+        <div v-if="selectedImages.length">
+          <div
+            v-for="(img, index) in selectedImages"
+            :key="index"
+            class="relative w-10 h-10 shrink-0"
           >
-            ✕
-          </button>
+            <img
+              :src="img.image"
+              class="w-full h-full object-cover rounded-lg border border-[rgba(255,122,0,0.2)]"
+            />
+            <button
+              class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center leading-none"
+              @click="removeImage(index)"
+            >
+              ✕
+            </button>
+          </div>
         </div>
       </div>
 
