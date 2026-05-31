@@ -1,3 +1,5 @@
+<!-- TODO СДЕЛАТЬ ПРОДОЛЖЕНИЕ КАРТИНОК И ОТРЕФАКТОРИТЬ РЕНДЕР -->
+
 <script setup lang="ts">
 import { ref, nextTick, reactive } from 'vue'
 import { imageToBase64 } from '@/features/ai'
@@ -129,9 +131,10 @@ function triggerFileInput() {
 
 function handleFileChange(event: Event) {
   const files = (event.target as HTMLInputElement).files
-  if (!files) return
+  if (!files || selectedImages.length === 3) return
   // Создаём blob URL только для превью в инпуте.
   // Для отправки в API позже вызовем imageToBase64(file) отдельно.
+
   for (const file of files) {
     const img = URL.createObjectURL(file)
     selectedImages.push({ image: img })
@@ -245,7 +248,7 @@ async function sendMessage() {
       class="px-5 py-4 border-b border-[rgba(255,122,0,0.08)] flex items-center gap-2.5 bg-light-bg"
     >
       <div
-        class="w-[38px] h-[38px] rounded-[10px] flex items-center justify-center text-xl border border-[rgba(255,122,0,0.2)]"
+        class="size-9.5 rounded-[10px] flex items-center justify-center text-xl border border-[rgba(255,122,0,0.2)]"
         style="background: linear-gradient(135deg, #ffe8d1, #ffc078)"
       >
         🤖
@@ -348,15 +351,15 @@ async function sendMessage() {
         </button>
 
         <!-- Превью выбранной картинки над инпутом -->
-        <div v-if="selectedImages.length">
+        <div class="flex gap-1" v-if="selectedImages.length">
           <div
             v-for="(img, index) in selectedImages"
             :key="index"
-            class="relative w-10 h-10 shrink-0"
+            class="relative size-10 shrink-0"
           >
             <img
               :src="img.image"
-              class="w-full h-full object-cover rounded-lg border border-[rgba(255,122,0,0.2)]"
+              class="size-full object-cover rounded-lg border border-[rgba(255,122,0,0.2)]"
             />
             <button
               class="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full w-4 h-4 text-[10px] flex items-center justify-center leading-none"
